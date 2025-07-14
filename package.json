@@ -1,0 +1,62 @@
+{
+  "name": "qa-automation",
+  "version": "1.0.0",
+  "description": "Automated QA tool for pre/post deployment website comparison",
+  "main": "dist/index.js",
+  "bin": {
+    "qa-automation": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "qa",
+    "automation",
+    "visual-testing",
+    "deployment",
+    "comparison"
+  ],
+  "author": "Your Team",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "cheerio": "^1.0.0-rc.12",
+    "commander": "^11.1.0",
+    "diff": "^5.1.0",
+    "fs-extra": "^11.2.0",
+    "glob": "^10.3.10",
+    "handlebars": "^4.7.8",
+    "mime-types": "^2.1.35",
+    "ora": "^5.4.1",
+    "pixelmatch": "^5.3.0",
+    "playwright": "^1.40.0",
+    "pngjs": "^7.0.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/jest": "^29.5.8",
+    "@types/mime-types": "^2.1.4",
+    "@types/node": "^20.10.5",
+    "@types/pixelmatch": "^5.2.6",
+    "@types/pngjs": "^6.0.4",
+    "@types/uuid": "^9.0.7",
+    "@typescript-eslint/eslint-plugin": "^6.16.0",
+    "@typescript-eslint/parser": "^6.16.0",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "description": "Example configurations for different deployment wait strategies",
+  
+  "delay_strategy": {
+    "deploymentWait": {
+      "strategy": "delay",
+      "maxWaitTime": 300000,
+      "interval": 10000,
+      "delay": 60000
+    }
+  },
+  
+  "healthcheck_strategy": {
+    "deploymentWait": {
+      "strategy": "healthcheck",
+      "maxWaitTime": 600000,
+      "interval": 15000,
+      "healthcheckUrl": "https://your-app.com/health",
+      "expectedStatus": 200
+    }
+  },
+  
+  "content_strategy_with_text": {
+    "deploymentWait": {
+      "strategy": "content",
+      "maxWaitTime": 300000,
+      "interval": 10000,
+      "contentUrl": "https://your-app.com/version",
+      "expectedContent": "v2.1.0"
+    }
+  },
+  
+  "content_strategy_with_selector": {
+    "deploymentWait": {
+      "strategy": "content",
+      "maxWaitTime": 300000,
+      "interval": 10000,
+      "contentUrl": "https://your-app.com",
+      "contentSelector": ".deployment-complete"
+    }
+  },
+  
+  "command_strategy": {
+    "deploymentWait": {
+      "strategy": "command",
+      "maxWaitTime": 600000,
+      "interval": 30000,
+      "command": "kubectl rollout status deployment/your-app",
+      "expectedExitCode": 0
+    }
+  },
+  
+  "docker_command_example": {
+    "deploymentWait": {
+      "strategy": "command",
+      "maxWaitTime": 300000,
+      "interval": 15000,
+      "command": "docker ps --filter name=your-app --filter status=running --quiet",
+      "expectedExitCode": 0
+    }
+  },
+  
+  "heroku_command_example": {
+    "deploymentWait": {
+      "strategy": "command",
+      "maxWaitTime": 600000,
+      "interval": 20000,
+      "command": "heroku ps --app your-app | grep 'web.1: up'",
+      "expectedExitCode": 0
+    }
+  }
+} 
