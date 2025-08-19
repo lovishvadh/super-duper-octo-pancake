@@ -36,6 +36,8 @@ export declare class ComparisonEngine {
     private comparePage;
     private compareSections;
     private compareSectionScreenshots;
+    private cropImageToSection;
+    private analyzeVisualChanges;
     private compareScreenshots;
     private normalizeImageDimensions;
     private compareContent;

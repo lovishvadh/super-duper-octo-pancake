@@ -176,8 +176,8 @@ export class ComparisonEngine {
     afterSections: PageSectionInfo[],
     beforeScreenshot: string,
     afterScreenshot: string
-  ): Promise<SectionComparisonResult[]> {
-    const comparisons: SectionComparisonResult[] = [];
+  ): Promise<SectionComparison[]> {
+    const comparisons: SectionComparison[] = [];
 
     // Create maps for quick lookup using selector + type as key
     const beforeSectionsMap = new Map<string, PageSectionInfo>();
@@ -215,7 +215,7 @@ export class ComparisonEngine {
         const hasChanges = contentChanges.added.length > 0 || 
                           contentChanges.removed.length > 0 || 
                           contentChanges.modified.length > 0 ||
-                          visualChanges.percentageChange > this.threshold;
+                          visualChanges.hasSignificantChanges;
 
         comparisons.push({
           sectionId: beforeSection.id,
@@ -241,6 +241,8 @@ export class ComparisonEngine {
           visualChanges: {
             pixelDifference: 0,
             percentageChange: 100,
+            hasSignificantChanges: true,
+            changeType: 'content',
           },
           boundingBox: beforeSection.boundingBox,
         });
@@ -265,6 +267,8 @@ export class ComparisonEngine {
           visualChanges: {
             pixelDifference: 0,
             percentageChange: 100,
+            hasSignificantChanges: true,
+            changeType: 'content',
           },
           boundingBox: afterSection.boundingBox,
         });
@@ -283,13 +287,151 @@ export class ComparisonEngine {
     pixelDifference: number;
     percentageChange: number;
     diffScreenshot?: string;
+    hasSignificantChanges: boolean;
+    changeType: 'none' | 'content' | 'layout' | 'both';
   }> {
-    // For now, return basic comparison
-    // In a full implementation, you would crop the screenshots to the section bounds
-    // and compare only those regions
+    if (!beforeScreenshot || !afterScreenshot) {
+      return {
+        pixelDifference: 0,
+        percentageChange: 0,
+        hasSignificantChanges: false,
+        changeType: 'none',
+      };
+    }
+
+    try {
+      const beforeBuffer = Buffer.from(beforeScreenshot, 'base64');
+      const afterBuffer = Buffer.from(afterScreenshot, 'base64');
+
+      const beforePng = PNG.sync.read(beforeBuffer);
+      const afterPng = PNG.sync.read(afterBuffer);
+
+      // Crop screenshots to section bounds
+      const beforeSectionImg = this.cropImageToSection(beforePng, beforeSection.boundingBox);
+      const afterSectionImg = this.cropImageToSection(afterPng, afterSection.boundingBox);
+
+      // Normalize dimensions for comparison
+      const { width, height } = this.normalizeImageDimensions(beforeSectionImg, afterSectionImg);
+
+      const diff = new PNG({ width, height });
+      const pixelDifference = pixelmatch(
+        beforeSectionImg.data,
+        afterSectionImg.data,
+        diff.data,
+        width,
+        height,
+        {
+          threshold: this.threshold,
+          includeAA: !this.ignoreAntialiasing,
+          alpha: 0.1,
+        }
+      );
+
+      const totalPixels = width * height;
+      const percentageChange = (pixelDifference / totalPixels) * 100;
+
+      // Intelligent change detection
+      const changeAnalysis = this.analyzeVisualChanges(
+        beforeSectionImg,
+        afterSectionImg,
+        pixelDifference,
+        percentageChange,
+        beforeSection,
+        afterSection
+      );
+
+      const diffBuffer = PNG.sync.write(diff);
+      const diffScreenshot = diffBuffer.toString('base64');
+
+      return {
+        pixelDifference,
+        percentageChange,
+        diffScreenshot,
+        hasSignificantChanges: changeAnalysis.hasSignificantChanges,
+        changeType: changeAnalysis.changeType,
+      };
+    } catch (error) {
+      console.warn('Error comparing section screenshots:', error);
+      return {
+        pixelDifference: 0,
+        percentageChange: 0,
+        hasSignificantChanges: false,
+        changeType: 'none',
+      };
+    }
+  }
+
+  private cropImageToSection(image: PNG, boundingBox: { x: number; y: number; width: number; height: number }): PNG {
+    const { x, y, width, height } = boundingBox;
+    
+    // Ensure bounds are within image dimensions
+    const cropX = Math.max(0, Math.min(x, image.width));
+    const cropY = Math.max(0, Math.min(y, image.height));
+    const cropWidth = Math.min(width, image.width - cropX);
+    const cropHeight = Math.min(height, image.height - cropY);
+
+    const cropped = new PNG({ width: cropWidth, height: cropHeight });
+    PNG.bitblt(image, cropped, cropX, cropY, cropWidth, cropHeight, 0, 0);
+    
+    return cropped;
+  }
+
+  private analyzeVisualChanges(
+    beforeImg: PNG,
+    afterImg: PNG,
+    pixelDifference: number,
+    percentageChange: number,
+    beforeSection: PageSectionInfo,
+    afterSection: PageSectionInfo
+  ): {
+    hasSignificantChanges: boolean;
+    changeType: 'none' | 'content' | 'layout' | 'both';
+  } {
+    // Calculate size differences
+    const beforeArea = beforeSection.boundingBox.width * beforeSection.boundingBox.height;
+    const afterArea = afterSection.boundingBox.width * afterSection.boundingBox.height;
+    const sizeDifference = Math.abs(beforeArea - afterArea) / Math.max(beforeArea, afterArea);
+
+    // Calculate aspect ratio differences
+    const beforeAspect = beforeSection.boundingBox.width / beforeSection.boundingBox.height;
+    const afterAspect = afterSection.boundingBox.width / afterSection.boundingBox.height;
+    const aspectDifference = Math.abs(beforeAspect - afterAspect) / Math.max(beforeAspect, afterAspect);
+
+    // Determine change type based on analysis
+    let changeType: 'none' | 'content' | 'layout' | 'both' = 'none';
+    let hasSignificantChanges = false;
+
+    // Layout changes (size/aspect ratio changes)
+    const hasLayoutChanges = sizeDifference > 0.1 || aspectDifference > 0.1;
+    
+    // Content changes (pixel differences)
+    const hasContentChanges = percentageChange > this.threshold;
+
+    if (hasLayoutChanges && hasContentChanges) {
+      changeType = 'both';
+      hasSignificantChanges = true;
+    } else if (hasContentChanges) {
+      changeType = 'content';
+      hasSignificantChanges = true;
+    } else if (hasLayoutChanges) {
+      changeType = 'layout';
+      // Only consider layout changes significant if they're substantial
+      hasSignificantChanges = sizeDifference > 0.2 || aspectDifference > 0.2;
+    }
+
+    // Additional checks for false positives
+    if (hasSignificantChanges) {
+      // Check if changes are just minor positioning differences
+      const isMinorPositioning = percentageChange < 5 && sizeDifference < 0.05;
+      if (isMinorPositioning) {
+        hasSignificantChanges = false;
+        changeType = 'none';
+      }
+    }
+
     return {
-      pixelDifference: 0,
-      percentageChange: 0,
+      hasSignificantChanges,
+      changeType,
     };
   }
 

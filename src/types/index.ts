@@ -86,6 +86,8 @@ export interface SectionComparison {
     pixelDifference: number;
     percentageChange: number;
     diffScreenshot?: string;
+    hasSignificantChanges: boolean;
+    changeType: 'none' | 'content' | 'layout' | 'both';
   };
   boundingBox?: {
     x: number;

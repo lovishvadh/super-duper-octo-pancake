@@ -318,6 +318,24 @@ class HtmlReporter {
             border-radius: 4px;
             padding: 10px;
         }
+        .section-change-item.visual {
+            border-left: 4px solid #007bff;
+        }
+        .section-change-item.visual h6 {
+            color: #007bff;
+        }
+        .change-type-content {
+            color: #28a745;
+            font-weight: 600;
+        }
+        .change-type-layout {
+            color: #fd7e14;
+            font-weight: 600;
+        }
+        .change-type-both {
+            color: #dc3545;
+            font-weight: 600;
+        }
         .section-change-item h6 {
             margin: 0 0 8px;
             color: #666;
@@ -514,9 +532,9 @@ class HtmlReporter {
                                         </div>
                                         {{/if}}
                                         
-                                        {{#if visualChanges.percentageChange}}
+                                        {{#if visualChanges.hasSignificantChanges}}
                                         <div class="section-change-item visual">
-                                            <h6>Visual Changes</h6>
+                                            <h6>Visual Changes ({{visualChanges.changeType}})</h6>
                                             <ul class="section-change-list">
                                                 <li>{{visualChanges.percentageChange}}% visual change</li>
                                                 <li>{{visualChanges.pixelDifference}} pixels different</li>
