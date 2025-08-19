@@ -199,45 +199,12 @@ export class WebCrawler {
       // Handle any popups that might have appeared after network idle
       await this.handleCookieModals(page);
       
-      // Wait for any ongoing animations or transitions to complete
-      await page.waitForFunction(() => {
-        return new Promise((resolve) => {
-          // Check if there are any ongoing animations
-          const animations = document.querySelectorAll('*');
-          let hasAnimations = false;
-          
-          for (const element of Array.from(animations)) {
-            const style = window.getComputedStyle(element);
-            if (style.animation !== 'none' || style.transition !== 'all 0s ease 0s') {
-              hasAnimations = true;
-              break;
-            }
-          }
-          
-          if (!hasAnimations) {
-            resolve(true);
-          } else {
-            // Wait a bit more for animations to complete
-            setTimeout(() => resolve(true), 1000);
-          }
-        });
-      }, { timeout: 10000 });
-      
-      // Wait for any lazy-loaded images to load
-      await page.waitForFunction(() => {
-        return new Promise((resolve) => {
-          const images = Array.from(document.querySelectorAll('img'));
-          const promises = images.map(img => {
-            if (img.complete) return Promise.resolve();
-            return new Promise((res) => {
-              img.onload = res;
-              img.onerror = res;
-            });
-          });
-          
-          Promise.all(promises).then(() => resolve(true));
-        });
-      }, { timeout: 10000 });
+      // Simple wait for any remaining animations (simplified to avoid eval issues)
+      try {
+        await page.waitForTimeout(1000); // Wait for any animations to complete
+      } catch (error) {
+        // Ignore timeout errors
+      }
       
     } catch (error) {
       // If any waiting fails, continue anyway - the page might be slow but functional

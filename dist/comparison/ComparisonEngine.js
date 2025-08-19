@@ -56,13 +56,15 @@ class ComparisonEngine {
     }
     async compareResults(beforeResults, afterResults) {
         const comparisons = [];
-        // Create a map of after results for quick lookup
+        // Create a map of after results for quick lookup by path
         const afterResultsMap = new Map();
         afterResults.forEach(result => {
-            afterResultsMap.set(result.url, result);
+            const path = this.extractPath(result.url);
+            afterResultsMap.set(path, result);
         });
         for (const beforeResult of beforeResults) {
-            const afterResult = afterResultsMap.get(beforeResult.url);
+            const beforePath = this.extractPath(beforeResult.url);
+            const afterResult = afterResultsMap.get(beforePath);
             if (!afterResult) {
                 // Page was removed
                 comparisons.push({
@@ -90,7 +92,8 @@ class ComparisonEngine {
         }
         // Check for new pages
         for (const afterResult of afterResults) {
-            const beforeResult = beforeResults.find(r => r.url === afterResult.url);
+            const afterPath = this.extractPath(afterResult.url);
+            const beforeResult = beforeResults.find(r => this.extractPath(r.url) === afterPath);
             if (!beforeResult) {
                 comparisons.push({
                     url: afterResult.url,
@@ -142,18 +145,21 @@ class ComparisonEngine {
     }
     async compareSections(beforeSections, afterSections, beforeScreenshot, afterScreenshot) {
         const comparisons = [];
-        // Create maps for quick lookup
+        // Create maps for quick lookup using selector + type as key
         const beforeSectionsMap = new Map();
         const afterSectionsMap = new Map();
         beforeSections.forEach(section => {
-            beforeSectionsMap.set(section.id, section);
+            const key = `${section.selector}-${section.type}`;
+            beforeSectionsMap.set(key, section);
         });
         afterSections.forEach(section => {
-            afterSectionsMap.set(section.id, section);
+            const key = `${section.selector}-${section.type}`;
+            afterSectionsMap.set(key, section);
         });
         // Compare each section
         for (const beforeSection of beforeSections) {
-            const afterSection = afterSectionsMap.get(beforeSection.id);
+            const key = `${beforeSection.selector}-${beforeSection.type}`;
+            const afterSection = afterSectionsMap.get(key);
             if (afterSection) {
                 // Section exists in both versions
                 const contentChanges = this.compareContent(beforeSection.content, afterSection.content);
@@ -194,7 +200,8 @@ class ComparisonEngine {
         }
         // Check for new sections
         for (const afterSection of afterSections) {
-            const beforeSection = beforeSectionsMap.get(afterSection.id);
+            const key = `${afterSection.selector}-${afterSection.type}`;
+            const beforeSection = beforeSectionsMap.get(key);
             if (!beforeSection) {
                 comparisons.push({
                     sectionId: afterSection.id,
@@ -358,6 +365,17 @@ class ComparisonEngine {
             }
         }
         return matrix[str2.length][str1.length];
+    }
+    extractPath(url) {
+        try {
+            const urlObj = new URL(url);
+            return urlObj.pathname + urlObj.search + urlObj.hash;
+        }
+        catch (error) {
+            // If URL parsing fails, try to extract path manually
+            const match = url.match(/https?:\/\/[^\/]+(\/.*)?/);
+            return match ? (match[1] || '/') : url;
+        }
     }
 }
 exports.ComparisonEngine = ComparisonEngine;

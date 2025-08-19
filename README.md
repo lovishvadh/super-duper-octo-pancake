@@ -69,6 +69,8 @@ qa-automation compare \
   --output ./reports
 ```
 
+**Note**: The tool automatically matches pages by their path (not full URL), so you can compare different domains (staging vs production) and the corresponding pages will be compared correctly.
+
 ## Configuration
 
 ### Default Configuration Structure
@@ -231,6 +233,11 @@ qa-automation run \
   --after-url https://production.example.com \
   --output ./qa-results
 ```
+
+**Cross-Domain Comparison**: The tool automatically matches pages by their path, so you can compare different environments:
+- Staging vs Production: `--before-url https://staging.example.com --after-url https://production.example.com`
+- Dev vs Live: `--before-url https://dev.myapp.com --after-url https://myapp.com`
+- Test vs Production: `--before-url https://test.company.com --after-url https://www.company.com`
 
 **Example with deployment wait:**
 ```bash

@@ -42,5 +42,6 @@ export declare class ComparisonEngine {
     private extractTextContent;
     private isSimilar;
     private levenshteinDistance;
+    private extractPath;
 }
 //# sourceMappingURL=ComparisonEngine.d.ts.map
