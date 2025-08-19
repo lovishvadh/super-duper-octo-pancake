@@ -39,7 +39,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ComparisonEngine = void 0;
 const pngjs_1 = require("pngjs");
 const pixelmatch_1 = __importDefault(require("pixelmatch"));
-const diff = __importStar(require("diff"));
 const cheerio = __importStar(require("cheerio"));
 const buffer_1 = require("buffer");
 class ComparisonEngine {
@@ -388,51 +387,107 @@ class ComparisonEngine {
         return { width, height };
     }
     compareContent(beforeContent, afterContent) {
-        const beforeText = this.extractTextContent(beforeContent);
-        const afterText = this.extractTextContent(afterContent);
-        const diffResult = diff.diffLines(beforeText, afterText);
+        // Extract individual elements for granular comparison
+        const beforeElements = this.extractContentElements(beforeContent);
+        const afterElements = this.extractContentElements(afterContent);
         const added = [];
         const removed = [];
         const modified = [];
         const details = [];
-        diffResult.forEach((part) => {
-            if (part.added) {
-                const text = part.value.trim();
-                if (text.length > 0) {
-                    added.push(text);
-                    details.push(`➕ Added: "${text}"`);
+        // Create maps for quick lookup
+        const beforeElementsMap = new Map();
+        const afterElementsMap = new Map();
+        beforeElements.forEach((text, selector) => {
+            beforeElementsMap.set(selector, text);
+        });
+        afterElements.forEach((text, selector) => {
+            afterElementsMap.set(selector, text);
+        });
+        // Check for added elements
+        afterElements.forEach((afterText, selector) => {
+            const beforeText = beforeElementsMap.get(selector);
+            if (!beforeText) {
+                // New element added
+                if (afterText.trim().length > 0) {
+                    added.push(afterText.trim());
+                    details.push(`➕ Added ${selector}: "${afterText.trim()}"`);
                 }
             }
-            else if (part.removed) {
-                const text = part.value.trim();
-                if (text.length > 0) {
-                    removed.push(text);
-                    details.push(`➖ Removed: "${text}"`);
-                }
+            else if (beforeText.trim() !== afterText.trim()) {
+                // Element modified
+                const changeDescription = this.describeTextChange(beforeText.trim(), afterText.trim());
+                modified.push(changeDescription);
+                details.push(`✏️ Modified ${selector}: ${changeDescription}`);
             }
         });
-        // Detect modifications (items that appear in both added and removed)
-        const addedSet = new Set(added);
-        const removedSet = new Set(removed);
-        added.forEach(addedItem => {
-            const similarRemoved = Array.from(removedSet).find(removedItem => this.isSimilar(addedItem, removedItem));
-            if (similarRemoved) {
-                const changeDescription = this.describeTextChange(similarRemoved, addedItem);
-                modified.push(changeDescription);
-                details.push(`✏️ Modified: ${changeDescription}`);
-                addedSet.delete(addedItem);
-                removedSet.delete(similarRemoved);
+        // Check for removed elements
+        beforeElements.forEach((beforeText, selector) => {
+            const afterText = afterElementsMap.get(selector);
+            if (!afterText) {
+                // Element removed
+                if (beforeText.trim().length > 0) {
+                    removed.push(beforeText.trim());
+                    details.push(`➖ Removed ${selector}: "${beforeText.trim()}"`);
+                }
             }
         });
         // Generate user-friendly summary
         const summary = this.generateContentSummary(added, removed, modified);
         return {
-            added: Array.from(addedSet).filter(item => item.length > 0),
-            removed: Array.from(removedSet).filter(item => item.length > 0),
+            added: added.filter(item => item.length > 0),
+            removed: removed.filter(item => item.length > 0),
             modified: modified.filter(item => item.length > 0),
             summary,
             details: details.filter(item => item.length > 0),
         };
+    }
+    extractContentElements(html) {
+        const elements = new Map();
+        if (!html)
+            return elements;
+        const $ = cheerio.load(html);
+        // Remove script and style elements
+        $('script, style, noscript').remove();
+        // Extract text from different types of elements
+        const selectors = [
+            'h1', 'h2', 'h3', 'h4', 'h5', 'h6', // Headings
+            'p', 'span', 'div', 'a', 'li', 'td', 'th', // Text elements
+            'button', 'input[type="text"]', 'textarea', 'label', // Form elements
+            '[data-testid]', '[id]', '[class*="content"]', '[class*="text"]' // Custom selectors
+        ];
+        selectors.forEach(selector => {
+            $(selector).each((index, element) => {
+                const $el = $(element);
+                const text = $el.text().trim();
+                if (text.length > 0) {
+                    // Create a unique selector for this element
+                    const uniqueSelector = this.createUniqueSelector($el, selector, index);
+                    elements.set(uniqueSelector, text);
+                }
+            });
+        });
+        return elements;
+    }
+    createUniqueSelector($el, baseSelector, index) {
+        // Try to create a unique selector based on available attributes
+        const id = $el.attr('id');
+        const dataTestId = $el.attr('data-testid');
+        const className = $el.attr('class');
+        if (id) {
+            return `#${id}`;
+        }
+        else if (dataTestId) {
+            return `[data-testid="${dataTestId}"]`;
+        }
+        else if (className) {
+            // Use a simplified class selector
+            const classes = className.split(' ').filter((c) => c.length > 0);
+            if (classes.length > 0) {
+                return `${baseSelector}.${classes[0]}`;
+            }
+        }
+        // Fallback to indexed selector
+        return `${baseSelector}:nth-child(${index + 1})`;
     }
     describeTextChange(oldText, newText) {
         // Clean up text for better comparison

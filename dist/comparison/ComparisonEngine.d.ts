@@ -40,6 +40,8 @@ export declare class ComparisonEngine {
     private compareScreenshots;
     private normalizeImageDimensions;
     private compareContent;
+    private extractContentElements;
+    private createUniqueSelector;
     private describeTextChange;
     private generateContentSummary;
     private extractTextContent;
