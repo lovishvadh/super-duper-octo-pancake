@@ -47,6 +47,12 @@ class ComparisonEngine {
         this.threshold = options.threshold || 0.1;
         this.ignoreAntialiasing = options.ignoreAntialiasing || true;
         this.ignoreColors = options.ignoreColors || false;
+        this.sectionSelectors = options.sectionSelectors || [
+            'header', 'nav', 'main', 'aside', 'footer',
+            '.header', '.navigation', '.main-content', '.sidebar', '.footer',
+            '[role="banner"]', '[role="navigation"]', '[role="main"]', '[role="complementary"]', '[role="contentinfo"]',
+            '.hero', '.banner', '.content', '.form', '.widget', '.section'
+        ];
     }
     async compareResults(beforeResults, afterResults) {
         const comparisons = [];
@@ -70,6 +76,7 @@ class ComparisonEngine {
                         removed: ['Entire page removed'],
                         modified: [],
                     },
+                    sectionComparisons: [],
                     metadata: {
                         timestamp: new Date().toISOString(),
                         beforeTimestamp: beforeResult.metadata.timestamp,
@@ -96,6 +103,7 @@ class ComparisonEngine {
                         removed: [],
                         modified: [],
                     },
+                    sectionComparisons: [],
                     metadata: {
                         timestamp: new Date().toISOString(),
                         beforeTimestamp: '',
@@ -107,7 +115,14 @@ class ComparisonEngine {
         return comparisons;
     }
     async comparePage(beforeResult, afterResult) {
+        // Use sections from crawler results
+        const beforeSections = beforeResult.sections || [];
+        const afterSections = afterResult.sections || [];
+        // Compare sections
+        const sectionComparisons = await this.compareSections(beforeSections, afterSections, beforeResult.screenshot, afterResult.screenshot);
+        // Overall screenshot comparison
         const screenshotComparison = await this.compareScreenshots(beforeResult.screenshot, afterResult.screenshot);
+        // Overall content comparison
         const contentChanges = this.compareContent(beforeResult.content, afterResult.content);
         return {
             url: beforeResult.url,
@@ -117,11 +132,97 @@ class ComparisonEngine {
             pixelDifference: screenshotComparison.pixelDifference,
             percentageChange: screenshotComparison.percentageChange,
             contentChanges,
+            sectionComparisons,
             metadata: {
                 timestamp: new Date().toISOString(),
                 beforeTimestamp: beforeResult.metadata.timestamp,
                 afterTimestamp: afterResult.metadata.timestamp,
             },
+        };
+    }
+    async compareSections(beforeSections, afterSections, beforeScreenshot, afterScreenshot) {
+        const comparisons = [];
+        // Create maps for quick lookup
+        const beforeSectionsMap = new Map();
+        const afterSectionsMap = new Map();
+        beforeSections.forEach(section => {
+            beforeSectionsMap.set(section.id, section);
+        });
+        afterSections.forEach(section => {
+            afterSectionsMap.set(section.id, section);
+        });
+        // Compare each section
+        for (const beforeSection of beforeSections) {
+            const afterSection = afterSectionsMap.get(beforeSection.id);
+            if (afterSection) {
+                // Section exists in both versions
+                const contentChanges = this.compareContent(beforeSection.content, afterSection.content);
+                const visualChanges = await this.compareSectionScreenshots(beforeScreenshot, afterScreenshot, beforeSection, afterSection);
+                const hasChanges = contentChanges.added.length > 0 ||
+                    contentChanges.removed.length > 0 ||
+                    contentChanges.modified.length > 0 ||
+                    visualChanges.percentageChange > this.threshold;
+                comparisons.push({
+                    sectionId: beforeSection.id,
+                    sectionType: beforeSection.type,
+                    selector: beforeSection.selector,
+                    hasChanges,
+                    contentChanges,
+                    visualChanges,
+                    boundingBox: beforeSection.boundingBox,
+                });
+            }
+            else {
+                // Section was removed
+                comparisons.push({
+                    sectionId: beforeSection.id,
+                    sectionType: beforeSection.type,
+                    selector: beforeSection.selector,
+                    hasChanges: true,
+                    contentChanges: {
+                        added: [],
+                        removed: ['Section removed'],
+                        modified: [],
+                    },
+                    visualChanges: {
+                        pixelDifference: 0,
+                        percentageChange: 100,
+                    },
+                    boundingBox: beforeSection.boundingBox,
+                });
+            }
+        }
+        // Check for new sections
+        for (const afterSection of afterSections) {
+            const beforeSection = beforeSectionsMap.get(afterSection.id);
+            if (!beforeSection) {
+                comparisons.push({
+                    sectionId: afterSection.id,
+                    sectionType: afterSection.type,
+                    selector: afterSection.selector,
+                    hasChanges: true,
+                    contentChanges: {
+                        added: ['New section added'],
+                        removed: [],
+                        modified: [],
+                    },
+                    visualChanges: {
+                        pixelDifference: 0,
+                        percentageChange: 100,
+                    },
+                    boundingBox: afterSection.boundingBox,
+                });
+            }
+        }
+        return comparisons;
+    }
+    async compareSectionScreenshots(beforeScreenshot, afterScreenshot, beforeSection, afterSection) {
+        // For now, return basic comparison
+        // In a full implementation, you would crop the screenshots to the section bounds
+        // and compare only those regions
+        return {
+            pixelDifference: 0,
+            percentageChange: 0,
         };
     }
     async compareScreenshots(beforeScreenshot, afterScreenshot) {

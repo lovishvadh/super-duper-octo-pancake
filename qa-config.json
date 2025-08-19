@@ -20,7 +20,11 @@
       "\\.js$",
       "/api/",
       "/admin/"
-    ]
+    ],
+    "cookieModalHandling": {
+      "enabled": true,
+      "waitAfterClick": 1000
+    }
   },
   "comparison": {
     "threshold": 0.1,

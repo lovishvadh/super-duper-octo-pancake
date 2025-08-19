@@ -1,0 +1,164 @@
+{
+  "default-cookie-handling": {
+    "description": "Default cookie modal handling (enabled by default)",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://example.com",
+        "pages": ["/", "/about"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 30000,
+        "waitForTimeout": 2000,
+        "cookieModalHandling": {
+          "enabled": true,
+          "waitAfterClick": 1000
+        }
+      }
+    }
+  },
+
+  "custom-cookie-selectors": {
+    "description": "Custom cookie modal selectors for specific websites",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://example.com",
+        "pages": ["/", "/about"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 30000,
+        "waitForTimeout": 2000,
+        "cookieModalHandling": {
+          "enabled": true,
+          "customSelectors": [
+            ".my-custom-cookie-button",
+            "#my-cookie-accept",
+            "button[aria-label='Accept cookies']",
+            ".cookie-consent .btn-primary",
+            "[data-cookie-accept='true']"
+          ],
+          "waitAfterClick": 1500
+        }
+      }
+    }
+  },
+
+  "disabled-cookie-handling": {
+    "description": "Disable cookie modal handling",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://example.com",
+        "pages": ["/", "/about"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 30000,
+        "waitForTimeout": 2000,
+        "cookieModalHandling": {
+          "enabled": false
+        }
+      }
+    }
+  },
+
+  "european-gdpr-site": {
+    "description": "Configuration for European websites with GDPR compliance",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://european-site.com",
+        "pages": ["/", "/products"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 45000,
+        "waitForTimeout": 3000,
+        "cookieModalHandling": {
+          "enabled": true,
+          "customSelectors": [
+            ".gdpr-accept-all",
+            ".cookie-accept-all",
+            "[data-gdpr-accept='all']",
+            "button:has-text('Accept All Cookies')",
+            "button:has-text('I Accept All')",
+            ".cookie-banner .accept-all"
+          ],
+          "waitAfterClick": 2000
+        }
+      }
+    }
+  },
+
+  "news-site-with-popups": {
+    "description": "News site with multiple popups and cookie banners",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://news-site.com",
+        "pages": ["/", "/latest"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 60000,
+        "waitForTimeout": 4000,
+        "cookieModalHandling": {
+          "enabled": true,
+          "customSelectors": [
+            ".newsletter-popup .close",
+            ".ad-popup .dismiss",
+            ".cookie-banner .accept",
+            ".subscription-modal .close",
+            "button:has-text('No thanks')",
+            "button:has-text('Skip')",
+            "button:has-text('Maybe later')"
+          ],
+          "waitAfterClick": 1500
+        }
+      }
+    }
+  },
+
+  "ecommerce-site": {
+    "description": "E-commerce site with promotional popups",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://ecommerce-site.com",
+        "pages": ["/", "/products"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 90000,
+        "waitForTimeout": 5000,
+        "cookieModalHandling": {
+          "enabled": true,
+          "customSelectors": [
+            ".promo-popup .close",
+            ".discount-modal .dismiss",
+            ".newsletter-signup .skip",
+            ".cookie-consent .accept",
+            "button:has-text('Continue shopping')",
+            "button:has-text('Not now')",
+            "button:has-text('Maybe later')",
+            ".modal-close",
+            ".popup-close"
+          ],
+          "waitAfterClick": 2000
+        }
+      }
+    }
+  },
+
+  "spa-with-dynamic-modals": {
+    "description": "Single Page Application with dynamically loaded modals",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://spa-site.com",
+        "pages": ["/", "/dashboard"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 45000,
+        "waitForTimeout": 3000,
+        "waitForSelector": "[data-testid='app-loaded']",
+        "cookieModalHandling": {
+          "enabled": true,
+          "customSelectors": [
+            "[data-testid='cookie-accept']",
+            "[data-testid='modal-close']",
+            "[data-testid='popup-dismiss']",
+            ".dynamic-modal .close",
+            ".react-modal .dismiss",
+            "button[data-cy='accept-cookies']",
+            "button[data-cy='close-modal']"
+          ],
+          "waitAfterClick": 1500
+        }
+      }
+    }
+  }
+}

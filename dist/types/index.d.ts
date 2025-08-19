@@ -16,11 +16,17 @@ export interface CrawlConfig {
     };
     excludePatterns?: string[];
     includePatterns?: string[];
+    cookieModalHandling?: {
+        enabled?: boolean;
+        customSelectors?: string[];
+        waitAfterClick?: number;
+    };
 }
 export interface CrawlResult {
     url: string;
     screenshot: string;
     content: string;
+    sections: PageSectionInfo[];
     metadata: {
         title: string;
         description?: string;
@@ -29,6 +35,19 @@ export interface CrawlResult {
         statusCode?: number;
         errors?: string[];
     };
+}
+export interface PageSectionInfo {
+    id: string;
+    selector: string;
+    type: string;
+    boundingBox: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    };
+    content: string;
+    textContent: string;
 }
 export interface ComparisonResult {
     url: string;
@@ -42,10 +61,33 @@ export interface ComparisonResult {
         removed: string[];
         modified: string[];
     };
+    sectionComparisons: SectionComparison[];
     metadata: {
         timestamp: string;
         beforeTimestamp: string;
         afterTimestamp: string;
+    };
+}
+export interface SectionComparison {
+    sectionId: string;
+    sectionType: string;
+    selector: string;
+    hasChanges: boolean;
+    contentChanges: {
+        added: string[];
+        removed: string[];
+        modified: string[];
+    };
+    visualChanges: {
+        pixelDifference: number;
+        percentageChange: number;
+        diffScreenshot?: string;
+    };
+    boundingBox?: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
     };
 }
 export interface ReportConfig {

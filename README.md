@@ -7,7 +7,8 @@ A comprehensive automated QA tool for comparing websites before and after deploy
 - 🕷️ **Web Crawling**: Automated crawling with Playwright for reliable screenshot capture
 - 🔍 **Visual Comparison**: Pixel-perfect image comparison with configurable thresholds
 - 📝 **Content Analysis**: Text content comparison with change detection
-- 📊 **HTML Reports**: Beautiful, interactive HTML reports with visual diffs
+- 🎯 **Section-by-Section Analysis**: Granular analysis of individual page sections (headers, navigation, content areas, etc.)
+- 📊 **HTML Reports**: Beautiful, interactive HTML reports with visual diffs and section breakdowns
 - ⚙️ **Configurable**: Flexible configuration system for different environments
 - 🚀 **CLI Interface**: Easy-to-use command-line interface
 - 🔧 **Extensible**: Modular architecture for easy customization
@@ -260,9 +261,23 @@ The generated HTML reports include:
 - **Executive Summary**: Overview of total, changed, unchanged, and failed pages
 - **Visual Diffs**: Side-by-side before/after screenshots with difference highlights
 - **Content Changes**: Detailed text content differences (added/removed/modified)
+- **Section-by-Section Analysis**: Granular breakdown of changes by page sections (headers, navigation, content areas, etc.)
 - **Individual Page Reports**: Detailed view for each page comparison
 - **Responsive Design**: Reports work well on desktop and mobile devices
 - **Interactive Elements**: Expandable sections and hover effects
+
+### Enhanced Section Analysis
+
+The tool now provides detailed section-by-section analysis, automatically detecting and comparing:
+
+- **Page Sections**: Headers, navigation, main content, sidebars, footers, forms
+- **Content Changes**: Text additions, removals, and modifications per section
+- **Visual Changes**: Pixel-level differences and percentage changes per section
+- **Bounding Box Information**: Precise location and dimensions of each section
+
+This granular analysis helps identify exactly which parts of a page have changed, reducing false positives and providing actionable insights for debugging.
+
+For detailed information about the enhanced features, see [ENHANCED_FEATURES.md](./ENHANCED_FEATURES.md).
 
 ## Deployment Wait Strategies
 

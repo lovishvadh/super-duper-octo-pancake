@@ -2,22 +2,53 @@ import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import * as diff from 'diff';
 import * as cheerio from 'cheerio';
-import { CrawlResult, ComparisonResult } from '../types';
+import { CrawlResult, ComparisonResult, SectionComparison, PageSectionInfo } from '../types';
 import { Buffer } from 'buffer';
+
+export interface SectionComparisonResult {
+  sectionId: string;
+  sectionType: string;
+  selector: string;
+  hasChanges: boolean;
+  contentChanges: {
+    added: string[];
+    removed: string[];
+    modified: string[];
+  };
+  visualChanges: {
+    pixelDifference: number;
+    percentageChange: number;
+    diffScreenshot?: string;
+  };
+  boundingBox?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
 
 export class ComparisonEngine {
   private threshold: number;
   private ignoreAntialiasing: boolean;
   private ignoreColors: boolean;
+  private sectionSelectors: string[];
 
   constructor(options: {
     threshold?: number;
     ignoreAntialiasing?: boolean;
     ignoreColors?: boolean;
+    sectionSelectors?: string[];
   } = {}) {
     this.threshold = options.threshold || 0.1;
     this.ignoreAntialiasing = options.ignoreAntialiasing || true;
     this.ignoreColors = options.ignoreColors || false;
+    this.sectionSelectors = options.sectionSelectors || [
+      'header', 'nav', 'main', 'aside', 'footer', 
+      '.header', '.navigation', '.main-content', '.sidebar', '.footer',
+      '[role="banner"]', '[role="navigation"]', '[role="main"]', '[role="complementary"]', '[role="contentinfo"]',
+      '.hero', '.banner', '.content', '.form', '.widget', '.section'
+    ];
   }
 
   async compareResults(
@@ -48,6 +79,7 @@ export class ComparisonEngine {
             removed: ['Entire page removed'],
             modified: [],
           },
+          sectionComparisons: [],
           metadata: {
             timestamp: new Date().toISOString(),
             beforeTimestamp: beforeResult.metadata.timestamp,
@@ -76,6 +108,7 @@ export class ComparisonEngine {
             removed: [],
             modified: [],
           },
+          sectionComparisons: [],
           metadata: {
             timestamp: new Date().toISOString(),
             beforeTimestamp: '',
@@ -92,11 +125,25 @@ export class ComparisonEngine {
     beforeResult: CrawlResult,
     afterResult: CrawlResult
   ): Promise<ComparisonResult> {
+    // Use sections from crawler results
+    const beforeSections = beforeResult.sections || [];
+    const afterSections = afterResult.sections || [];
+
+    // Compare sections
+    const sectionComparisons = await this.compareSections(
+      beforeSections,
+      afterSections,
+      beforeResult.screenshot,
+      afterResult.screenshot
+    );
+
+    // Overall screenshot comparison
     const screenshotComparison = await this.compareScreenshots(
       beforeResult.screenshot,
       afterResult.screenshot
     );
 
+    // Overall content comparison
     const contentChanges = this.compareContent(
       beforeResult.content,
       afterResult.content
@@ -110,11 +157,132 @@ export class ComparisonEngine {
       pixelDifference: screenshotComparison.pixelDifference,
       percentageChange: screenshotComparison.percentageChange,
       contentChanges,
+      sectionComparisons,
       metadata: {
         timestamp: new Date().toISOString(),
         beforeTimestamp: beforeResult.metadata.timestamp,
         afterTimestamp: afterResult.metadata.timestamp,
       },
+    };
+  }
+
+
+
+  private async compareSections(
+    beforeSections: PageSectionInfo[],
+    afterSections: PageSectionInfo[],
+    beforeScreenshot: string,
+    afterScreenshot: string
+  ): Promise<SectionComparisonResult[]> {
+    const comparisons: SectionComparisonResult[] = [];
+
+    // Create maps for quick lookup
+    const beforeSectionsMap = new Map<string, PageSectionInfo>();
+    const afterSectionsMap = new Map<string, PageSectionInfo>();
+
+    beforeSections.forEach(section => {
+      beforeSectionsMap.set(section.id, section);
+    });
+
+    afterSections.forEach(section => {
+      afterSectionsMap.set(section.id, section);
+    });
+
+    // Compare each section
+    for (const beforeSection of beforeSections) {
+      const afterSection = afterSectionsMap.get(beforeSection.id);
+      
+      if (afterSection) {
+        // Section exists in both versions
+        const contentChanges = this.compareContent(
+          beforeSection.content,
+          afterSection.content
+        );
+
+        const visualChanges = await this.compareSectionScreenshots(
+          beforeScreenshot,
+          afterScreenshot,
+          beforeSection,
+          afterSection
+        );
+
+        const hasChanges = contentChanges.added.length > 0 || 
+                          contentChanges.removed.length > 0 || 
+                          contentChanges.modified.length > 0 ||
+                          visualChanges.percentageChange > this.threshold;
+
+        comparisons.push({
+          sectionId: beforeSection.id,
+          sectionType: beforeSection.type,
+          selector: beforeSection.selector,
+          hasChanges,
+          contentChanges,
+          visualChanges,
+          boundingBox: beforeSection.boundingBox,
+        });
+      } else {
+        // Section was removed
+        comparisons.push({
+          sectionId: beforeSection.id,
+          sectionType: beforeSection.type,
+          selector: beforeSection.selector,
+          hasChanges: true,
+          contentChanges: {
+            added: [],
+            removed: ['Section removed'],
+            modified: [],
+          },
+          visualChanges: {
+            pixelDifference: 0,
+            percentageChange: 100,
+          },
+          boundingBox: beforeSection.boundingBox,
+        });
+      }
+    }
+
+    // Check for new sections
+    for (const afterSection of afterSections) {
+      const beforeSection = beforeSectionsMap.get(afterSection.id);
+      if (!beforeSection) {
+        comparisons.push({
+          sectionId: afterSection.id,
+          sectionType: afterSection.type,
+          selector: afterSection.selector,
+          hasChanges: true,
+          contentChanges: {
+            added: ['New section added'],
+            removed: [],
+            modified: [],
+          },
+          visualChanges: {
+            pixelDifference: 0,
+            percentageChange: 100,
+          },
+          boundingBox: afterSection.boundingBox,
+        });
+      }
+    }
+
+    return comparisons;
+  }
+
+  private async compareSectionScreenshots(
+    beforeScreenshot: string,
+    afterScreenshot: string,
+    beforeSection: PageSectionInfo,
+    afterSection: PageSectionInfo
+  ): Promise<{
+    pixelDifference: number;
+    percentageChange: number;
+    diffScreenshot?: string;
+  }> {
+    // For now, return basic comparison
+    // In a full implementation, you would crop the screenshots to the section bounds
+    // and compare only those regions
+    return {
+      pixelDifference: 0,
+      percentageChange: 0,
     };
   }
 

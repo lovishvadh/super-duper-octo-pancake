@@ -1,0 +1,97 @@
+{
+  "fast-website": {
+    "description": "For fast-loading websites",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://fast-website.com",
+        "pages": ["/", "/about", "/contact"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 15000,
+        "waitForTimeout": 1000,
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      }
+    }
+  },
+  
+  "slow-website": {
+    "description": "For slow-loading websites with heavy content",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://slow-website.com",
+        "pages": ["/", "/products", "/services"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 60000,
+        "waitForTimeout": 5000,
+        "waitForSelector": ".content-loaded",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      }
+    }
+  },
+  
+  "spa-website": {
+    "description": "For Single Page Applications (React, Vue, Angular)",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://spa-website.com",
+        "pages": ["/", "/dashboard", "/profile"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 45000,
+        "waitForTimeout": 3000,
+        "waitForSelector": "[data-testid='app-loaded']",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      }
+    }
+  },
+  
+  "ecommerce-website": {
+    "description": "For e-commerce sites with product images and dynamic content",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://ecommerce-site.com",
+        "pages": ["/", "/products", "/cart"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 90000,
+        "waitForTimeout": 8000,
+        "waitForSelector": ".product-grid, .main-content",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      }
+    }
+  },
+  
+  "news-website": {
+    "description": "For news sites with ads and dynamic content",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://news-site.com",
+        "pages": ["/", "/latest", "/category/tech"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 60000,
+        "waitForTimeout": 4000,
+        "waitForSelector": ".article-content, .news-grid",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      }
+    }
+  },
+  
+  "enterprise-website": {
+    "description": "For enterprise applications with authentication",
+    "config": {
+      "crawl": {
+        "baseUrl": "https://enterprise-app.com",
+        "pages": ["/", "/dashboard", "/reports"],
+        "viewport": { "width": 1920, "height": 1080 },
+        "timeout": 120000,
+        "waitForTimeout": 10000,
+        "waitForSelector": ".dashboard-loaded, .authenticated",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "headers": {
+          "Authorization": "Bearer your-token-here"
+        },
+        "authentication": {
+          "username": "your-username",
+          "password": "your-password"
+        }
+      }
+    }
+  }
+}

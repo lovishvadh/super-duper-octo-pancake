@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Difference Analysis Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section-analysis {
+            margin-top: 30px;
+            border-top: 2px solid #e9ecef;
+            padding-top: 20px;
+        }
+        .section-analysis h4 {
+            margin: 0 0 20px;
+            color: #333;
+            font-size: 1.2em;
+        }
+        .section-grid {
+            display: grid;
+            gap: 15px;
+        }
+        .section-item {
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .section-header {
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .section-title {
+            font-weight: 600;
+            color: #333;
+        }
+        .section-type {
+            background: #e9ecef;
+            color: #666;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+        .section-content {
+            padding: 15px;
+        }
+        .section-changes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .section-change-item {
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .section-change-item h6 {
+            margin: 0 0 8px;
+            color: #666;
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+        .section-change-item.added h6 { color: #28a745; }
+        .section-change-item.removed h6 { color: #dc3545; }
+        .section-change-item.modified h6 { color: #fd7e14; }
+        .section-change-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.85em;
+        }
+        .section-change-list li {
+            padding: 3px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .section-change-list li:last-child {
+            border-bottom: none;
+        }
+        .section-selector {
+            font-family: monospace;
+            background: #f1f3f4;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 10px;
+        }
+        .example-text {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        .example-text h5 {
+            margin: 0 0 10px;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Content Difference Analysis Example</h1>
+            <p>How content changes are displayed in the enhanced QA reports</p>
+        </div>
+        
+        <div class="content">
+            <div class="example-text">
+                <h5>📝 What the tool analyzes:</h5>
+                <ul>
+                    <li><strong>Text Content:</strong> Extracts and compares actual text content from HTML</li>
+                    <li><strong>Section-by-Section:</strong> Analyzes each section (header, navigation, main content, footer) separately</li>
+                    <li><strong>Content Types:</strong> Detects additions, removals, and modifications</li>
+                    <li><strong>Similarity Detection:</strong> Uses Levenshtein distance to identify similar but changed content</li>
+                </ul>
+            </div>
+
+            <div class="section-analysis">
+                <h4>Section-by-Section Content Analysis</h4>
+                <div class="section-grid">
+                    
+                    <!-- Header Section Example -->
+                    <div class="section-item">
+                        <div class="section-header">
+                            <div class="section-title">section_0</div>
+                            <div class="section-type">header</div>
+                        </div>
+                        <div class="section-content">
+                            <div class="section-changes">
+                                <div class="section-change-item modified">
+                                    <h6>Content Modified (1)</h6>
+                                    <ul class="section-change-list">
+                                        <li>Changed: "Welcome to Our Site" → "Welcome to Our Updated Site"</li>
+                                    </ul>
+                                </div>
+                                <div class="section-change-item added">
+                                    <h6>Content Added (1)</h6>
+                                    <ul class="section-change-list">
+                                        <li>Contact</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="section-selector">header</div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content Section Example -->
+                    <div class="section-item">
+                        <div class="section-header">
+                            <div class="section-title">section_1</div>
+                            <div class="section-type">main</div>
+                        </div>
+                        <div class="section-content">
+                            <div class="section-changes">
+                                <div class="section-change-item modified">
+                                    <h6>Content Modified (1)</h6>
+                                    <ul class="section-change-list">
+                                        <li>Changed: "This is the original content that will be changed." → "This is the updated content that has been changed."</li>
+                                    </ul>
+                                </div>
+                                <div class="section-change-item added">
+                                    <h6>Content Added (1)</h6>
+                                    <ul class="section-change-list">
+                                        <li>This is a new paragraph that was added.</li>
+                                    </ul>
+                                </div>
+                                <div class="section-change-item removed">
+                                    <h6>Content Removed (1)</h6>
+                                    <ul class="section-change-list">
+                                        <li>This paragraph will be removed.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="section-selector">main</div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Section Example -->
+                    <div class="section-item">
+                        <div class="section-header">
+                            <div class="section-title">section_2</div>
+                            <div class="section-type">footer</div>
+                        </div>
+                        <div class="section-content">
+                            <div class="section-changes">
+                                <div class="section-change-item modified">
+                                    <h6>Content Modified (1)</h6>
+                                    <ul class="section-change-list">
+                                        <li>Changed: "Copyright 2023" → "Copyright 2024"</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="section-selector">footer</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="example-text">
+                <h5>🎯 Key Benefits:</h5>
+                <ul>
+                    <li><strong>Precise Detection:</strong> Know exactly which sections changed, not just "the whole page"</li>
+                    <li><strong>Content Focus:</strong> Analyzes actual text content, not just visual differences</li>
+                    <li><strong>Actionable Insights:</strong> See what was added, removed, or modified</li>
+                    <li><strong>Reduced False Positives:</strong> Distinguish between meaningful content changes and minor visual variations</li>
+                    <li><strong>Better Debugging:</strong> Pinpoint specific areas that need attention</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

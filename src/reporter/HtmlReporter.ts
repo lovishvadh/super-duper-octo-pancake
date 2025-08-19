@@ -47,6 +47,7 @@ export class HtmlReporter {
         hasContentChanges: result.contentChanges.added.length > 0 || 
                           result.contentChanges.removed.length > 0 || 
                           result.contentChanges.modified.length > 0,
+        sectionComparisons: result.sectionComparisons || [],
       })),
       generatedAt: new Date().toLocaleString(),
       thresholdFormatted: (reportData.config.threshold || 0).toFixed(2),
@@ -244,6 +245,91 @@ export class HtmlReporter {
         .change-list li:last-child {
             border-bottom: none;
         }
+        .section-analysis {
+            margin-top: 30px;
+            border-top: 2px solid #e9ecef;
+            padding-top: 20px;
+        }
+        .section-analysis h4 {
+            margin: 0 0 20px;
+            color: #333;
+            font-size: 1.2em;
+        }
+        .section-grid {
+            display: grid;
+            gap: 15px;
+        }
+        .section-item {
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .section-header {
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .section-title {
+            font-weight: 600;
+            color: #333;
+        }
+        .section-type {
+            background: #e9ecef;
+            color: #666;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+        .section-content {
+            padding: 15px;
+        }
+        .section-changes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .section-change-item {
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .section-change-item h6 {
+            margin: 0 0 8px;
+            color: #666;
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+        .section-change-item.added h6 { color: #28a745; }
+        .section-change-item.removed h6 { color: #dc3545; }
+        .section-change-item.modified h6 { color: #fd7e14; }
+        .section-change-item.visual h6 { color: #007bff; }
+        .section-change-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.85em;
+        }
+        .section-change-list li {
+            padding: 3px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .section-change-list li:last-child {
+            border-bottom: none;
+        }
+        .section-selector {
+            font-family: monospace;
+            background: #f1f3f4;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 10px;
+        }
         .footer {
             text-align: center;
             padding: 20px;
@@ -323,7 +409,7 @@ export class HtmlReporter {
                     {{#if hasContentChanges}}
                     {{#if ../config.includeContentDiff}}
                     <div class="content-changes">
-                        <h4>Content Changes</h4>
+                        <h4>Overall Content Changes</h4>
                         <div class="changes-grid">
                             {{#if contentChanges.added.length}}
                             <div class="change-section added">
@@ -360,6 +446,73 @@ export class HtmlReporter {
                         </div>
                     </div>
                     {{/if}}
+                    {{/if}}
+
+                    {{#if sectionComparisons.length}}
+                    <div class="section-analysis">
+                        <h4>Section-by-Section Analysis</h4>
+                        <div class="section-grid">
+                            {{#each sectionComparisons}}
+                            <div class="section-item">
+                                <div class="section-header">
+                                    <div class="section-title">{{sectionId}}</div>
+                                    <div class="section-type">{{sectionType}}</div>
+                                </div>
+                                <div class="section-content">
+                                    {{#if hasChanges}}
+                                    <div class="section-changes">
+                                        {{#if contentChanges.added.length}}
+                                        <div class="section-change-item added">
+                                            <h6>Content Added ({{contentChanges.added.length}})</h6>
+                                            <ul class="section-change-list">
+                                                {{#each contentChanges.added}}
+                                                <li>{{this}}</li>
+                                                {{/each}}
+                                            </ul>
+                                        </div>
+                                        {{/if}}
+                                        
+                                        {{#if contentChanges.removed.length}}
+                                        <div class="section-change-item removed">
+                                            <h6>Content Removed ({{contentChanges.removed.length}})</h6>
+                                            <ul class="section-change-list">
+                                                {{#each contentChanges.removed}}
+                                                <li>{{this}}</li>
+                                                {{/each}}
+                                            </ul>
+                                        </div>
+                                        {{/if}}
+                                        
+                                        {{#if contentChanges.modified.length}}
+                                        <div class="section-change-item modified">
+                                            <h6>Content Modified ({{contentChanges.modified.length}})</h6>
+                                            <ul class="section-change-list">
+                                                {{#each contentChanges.modified}}
+                                                <li>{{this}}</li>
+                                                {{/each}}
+                                            </ul>
+                                        </div>
+                                        {{/if}}
+                                        
+                                        {{#if visualChanges.percentageChange}}
+                                        <div class="section-change-item visual">
+                                            <h6>Visual Changes</h6>
+                                            <ul class="section-change-list">
+                                                <li>{{visualChanges.percentageChange}}% visual change</li>
+                                                <li>{{visualChanges.pixelDifference}} pixels different</li>
+                                            </ul>
+                                        </div>
+                                        {{/if}}
+                                    </div>
+                                    {{else}}
+                                    <p style="color: #28a745; margin: 0;">✓ No changes detected in this section</p>
+                                    {{/if}}
+                                    <div class="section-selector">{{selector}}</div>
+                                </div>
+                            </div>
+                            {{/each}}
+                        </div>
+                    </div>
                     {{/if}}
                 </div>
             </div>
