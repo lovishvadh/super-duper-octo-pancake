@@ -9,6 +9,8 @@ A comprehensive automated QA tool for comparing websites before and after deploy
 - 📝 **Content Analysis**: Text content comparison with change detection
 - 🎯 **Section-by-Section Analysis**: Granular analysis of individual page sections (headers, navigation, content areas, etc.)
 - 🎨 **Intelligent UI Comparison**: Distinguishes between content and layout changes, reducing false positives
+- 📸 **Section Screenshots**: Individual screenshots for each section for accurate comparison
+- 📝 **User-Friendly Content**: Clear, readable descriptions of content changes with visual indicators
 - 📊 **HTML Reports**: Beautiful, interactive HTML reports with visual diffs and section breakdowns
 - ⚙️ **Configurable**: Flexible configuration system for different environments
 - 🚀 **CLI Interface**: Easy-to-use command-line interface

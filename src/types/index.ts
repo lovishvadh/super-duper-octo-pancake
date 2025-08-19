@@ -50,6 +50,7 @@ export interface PageSectionInfo {
   };
   content: string;
   textContent: string;
+  screenshot?: string; // Base64 encoded section screenshot
 }
 
 export interface ComparisonResult {
@@ -63,6 +64,8 @@ export interface ComparisonResult {
     added: string[];
     removed: string[];
     modified: string[];
+    summary: string;
+    details: string[];
   };
   sectionComparisons: SectionComparison[];
   metadata: {
@@ -81,6 +84,8 @@ export interface SectionComparison {
     added: string[];
     removed: string[];
     modified: string[];
+    summary: string;
+    details: string[];
   };
   visualChanges: {
     pixelDifference: number;

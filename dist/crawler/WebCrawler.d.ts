@@ -11,6 +11,7 @@ export interface PageSectionInfo {
     };
     content: string;
     textContent: string;
+    screenshot?: string;
 }
 export declare class WebCrawler {
     private browser;
@@ -31,6 +32,7 @@ export declare class WebCrawler {
     saveSession(outputPath: string): Promise<void>;
     private sanitizeFilename;
     cleanup(): Promise<void>;
+    private captureSectionScreenshot;
     getSession(): CrawlSession;
 }
 //# sourceMappingURL=WebCrawler.d.ts.map

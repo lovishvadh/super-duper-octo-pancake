@@ -48,6 +48,7 @@ export interface PageSectionInfo {
     };
     content: string;
     textContent: string;
+    screenshot?: string;
 }
 export interface ComparisonResult {
     url: string;
@@ -60,6 +61,8 @@ export interface ComparisonResult {
         added: string[];
         removed: string[];
         modified: string[];
+        summary: string;
+        details: string[];
     };
     sectionComparisons: SectionComparison[];
     metadata: {
@@ -77,6 +80,8 @@ export interface SectionComparison {
         added: string[];
         removed: string[];
         modified: string[];
+        summary: string;
+        details: string[];
     };
     visualChanges: {
         pixelDifference: number;

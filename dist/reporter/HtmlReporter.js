@@ -336,6 +336,38 @@ class HtmlReporter {
             color: #dc3545;
             font-weight: 600;
         }
+        .content-summary {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .summary-text {
+            margin: 0;
+            font-size: 1.1em;
+            color: #1976d2;
+            font-weight: 500;
+        }
+        .change-section.details {
+            border-left: 4px solid #9c27b0;
+        }
+        .change-section.details h5 {
+            color: #9c27b0;
+        }
+        .section-change-item.summary {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        .section-change-item.summary h6 {
+            color: #1976d2;
+        }
+        .section-change-item.details {
+            border-left: 4px solid #9c27b0;
+        }
+        .section-change-item.details h6 {
+            color: #9c27b0;
+        }
         .section-change-item h6 {
             margin: 0 0 8px;
             color: #666;
@@ -448,10 +480,26 @@ class HtmlReporter {
                     {{#if ../config.includeContentDiff}}
                     <div class="content-changes">
                         <h4>Overall Content Changes</h4>
+                        {{#if contentChanges.summary}}
+                        <div class="content-summary">
+                            <p class="summary-text">{{contentChanges.summary}}</p>
+                        </div>
+                        {{/if}}
                         <div class="changes-grid">
+                            {{#if contentChanges.details.length}}
+                            <div class="change-section details">
+                                <h5>Detailed Changes</h5>
+                                <ul class="change-list">
+                                    {{#each contentChanges.details}}
+                                    <li>{{{this}}}</li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                            {{/if}}
+                            
                             {{#if contentChanges.added.length}}
                             <div class="change-section added">
-                                <h5>Added ({{contentChanges.added.length}})</h5>
+                                <h5>Added Content ({{contentChanges.added.length}})</h5>
                                 <ul class="change-list">
                                     {{#each contentChanges.added}}
                                     <li>{{this}}</li>
@@ -462,7 +510,7 @@ class HtmlReporter {
                             
                             {{#if contentChanges.removed.length}}
                             <div class="change-section removed">
-                                <h5>Removed ({{contentChanges.removed.length}})</h5>
+                                <h5>Removed Content ({{contentChanges.removed.length}})</h5>
                                 <ul class="change-list">
                                     {{#each contentChanges.removed}}
                                     <li>{{this}}</li>
@@ -473,7 +521,7 @@ class HtmlReporter {
                             
                             {{#if contentChanges.modified.length}}
                             <div class="change-section modified">
-                                <h5>Modified ({{contentChanges.modified.length}})</h5>
+                                <h5>Modified Content ({{contentChanges.modified.length}})</h5>
                                 <ul class="change-list">
                                     {{#each contentChanges.modified}}
                                     <li>{{this}}</li>
@@ -499,6 +547,24 @@ class HtmlReporter {
                                 <div class="section-content">
                                     {{#if hasChanges}}
                                     <div class="section-changes">
+                                        {{#if contentChanges.summary}}
+                                        <div class="section-change-item summary">
+                                            <h6>Content Summary</h6>
+                                            <p class="summary-text">{{contentChanges.summary}}</p>
+                                        </div>
+                                        {{/if}}
+                                        
+                                        {{#if contentChanges.details.length}}
+                                        <div class="section-change-item details">
+                                            <h6>Content Details</h6>
+                                            <ul class="section-change-list">
+                                                {{#each contentChanges.details}}
+                                                <li>{{{this}}}</li>
+                                                {{/each}}
+                                            </ul>
+                                        </div>
+                                        {{/if}}
+                                        
                                         {{#if contentChanges.added.length}}
                                         <div class="section-change-item added">
                                             <h6>Content Added ({{contentChanges.added.length}})</h6>

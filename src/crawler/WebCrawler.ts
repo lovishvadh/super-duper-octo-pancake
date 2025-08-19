@@ -17,6 +17,7 @@ export interface PageSectionInfo {
   };
   content: string;
   textContent: string;
+  screenshot?: string; // Base64 encoded section screenshot
 }
 
 export class WebCrawler {
@@ -138,8 +139,13 @@ export class WebCrawler {
       // Get page content
       const content = await page.content();
 
-      // Extract section information
+      // Extract section information with individual screenshots
       const sections = await this.extractPageSections(page);
+      
+      // Capture individual screenshots for each section
+      for (const section of sections) {
+        section.screenshot = await this.captureSectionScreenshot(page, section);
+      }
 
       // Extract metadata
       const title = await page.title();
@@ -590,6 +596,18 @@ export class WebCrawler {
         const buffer = Buffer.from(result.screenshot, 'base64');
         await fs.writeFile(screenshotPath, buffer);
       }
+      
+      // Save section screenshots
+      for (const section of result.sections) {
+        if (section.screenshot) {
+          const sectionScreenshotPath = join(
+            screenshotsDir,
+            `${this.sanitizeFilename(result.url)}_${section.selector.replace(/[^a-zA-Z0-9]/g, '_')}.png`
+          );
+          const sectionBuffer = Buffer.from(section.screenshot, 'base64');
+          await fs.writeFile(sectionScreenshotPath, sectionBuffer);
+        }
+      }
     }
   }
 
@@ -605,6 +623,34 @@ export class WebCrawler {
     if (this.browser) {
       await this.browser.close();
       this.browser = null;
+    }
+  }
+
+  private async captureSectionScreenshot(page: any, section: PageSectionInfo): Promise<string> {
+    try {
+      // Wait a bit for any animations to complete
+      await page.waitForTimeout(100);
+      
+      // Get the element for this section
+      const element = page.locator(section.selector).first();
+      
+      // Check if element exists and is visible
+      const count = await element.count();
+      if (count === 0) {
+        console.warn(`Section element not found: ${section.selector}`);
+        return '';
+      }
+      
+      // Capture screenshot of the specific section
+      const screenshotBuffer = await element.screenshot({
+        type: 'png',
+        timeout: 5000,
+      });
+      
+      return screenshotBuffer.toString('base64');
+    } catch (error) {
+      console.warn(`Failed to capture screenshot for section ${section.selector}: ${error}`);
+      return '';
     }
   }
 

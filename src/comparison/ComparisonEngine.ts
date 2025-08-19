@@ -80,6 +80,8 @@ export class ComparisonEngine {
             added: [],
             removed: ['Entire page removed'],
             modified: [],
+            summary: 'Entire page removed',
+            details: ['➖ Removed: "Entire page removed"'],
           },
           sectionComparisons: [],
           metadata: {
@@ -110,6 +112,8 @@ export class ComparisonEngine {
             added: ['New page added'],
             removed: [],
             modified: [],
+            summary: 'New page added',
+            details: ['➕ Added: "New page added"'],
           },
           sectionComparisons: [],
           metadata: {
@@ -237,6 +241,8 @@ export class ComparisonEngine {
             added: [],
             removed: ['Section removed'],
             modified: [],
+            summary: 'Section removed',
+            details: ['➖ Removed: "Section removed"'],
           },
           visualChanges: {
             pixelDifference: 0,
@@ -263,6 +269,8 @@ export class ComparisonEngine {
             added: ['New section added'],
             removed: [],
             modified: [],
+            summary: 'New section added',
+            details: ['➕ Added: "New section added"'],
           },
           visualChanges: {
             pixelDifference: 0,
@@ -290,7 +298,11 @@ export class ComparisonEngine {
     hasSignificantChanges: boolean;
     changeType: 'none' | 'content' | 'layout' | 'both';
   }> {
-    if (!beforeScreenshot || !afterScreenshot) {
+    // Use individual section screenshots if available
+    const beforeSectionScreenshot = beforeSection.screenshot || beforeScreenshot;
+    const afterSectionScreenshot = afterSection.screenshot || afterScreenshot;
+    
+    if (!beforeSectionScreenshot || !afterSectionScreenshot) {
       return {
         pixelDifference: 0,
         percentageChange: 0,
@@ -300,23 +312,19 @@ export class ComparisonEngine {
     }
 
     try {
-      const beforeBuffer = Buffer.from(beforeScreenshot, 'base64');
-      const afterBuffer = Buffer.from(afterScreenshot, 'base64');
+      const beforeBuffer = Buffer.from(beforeSectionScreenshot, 'base64');
+      const afterBuffer = Buffer.from(afterSectionScreenshot, 'base64');
 
       const beforePng = PNG.sync.read(beforeBuffer);
       const afterPng = PNG.sync.read(afterBuffer);
 
-      // Crop screenshots to section bounds
-      const beforeSectionImg = this.cropImageToSection(beforePng, beforeSection.boundingBox);
-      const afterSectionImg = this.cropImageToSection(afterPng, afterSection.boundingBox);
-
       // Normalize dimensions for comparison
-      const { width, height } = this.normalizeImageDimensions(beforeSectionImg, afterSectionImg);
+      const { width, height } = this.normalizeImageDimensions(beforePng, afterPng);
 
       const diff = new PNG({ width, height });
       const pixelDifference = pixelmatch(
-        beforeSectionImg.data,
-        afterSectionImg.data,
+        beforePng.data,
+        afterPng.data,
         diff.data,
         width,
         height,
@@ -332,8 +340,8 @@ export class ComparisonEngine {
 
       // Intelligent change detection
       const changeAnalysis = this.analyzeVisualChanges(
-        beforeSectionImg,
-        afterSectionImg,
+        beforePng,
+        afterPng,
         pixelDifference,
         percentageChange,
         beforeSection,
@@ -361,20 +369,7 @@ export class ComparisonEngine {
     }
   }
 
-  private cropImageToSection(image: PNG, boundingBox: { x: number; y: number; width: number; height: number }): PNG {
-    const { x, y, width, height } = boundingBox;
-    
-    // Ensure bounds are within image dimensions
-    const cropX = Math.max(0, Math.min(x, image.width));
-    const cropY = Math.max(0, Math.min(y, image.height));
-    const cropWidth = Math.min(width, image.width - cropX);
-    const cropHeight = Math.min(height, image.height - cropY);
 
-    const cropped = new PNG({ width: cropWidth, height: cropHeight });
-    PNG.bitblt(image, cropped, cropX, cropY, cropWidth, cropHeight, 0, 0);
-    
-    return cropped;
-  }
 
   private analyzeVisualChanges(
     beforeImg: PNG,
@@ -530,6 +525,8 @@ export class ComparisonEngine {
     added: string[];
     removed: string[];
     modified: string[];
+    summary: string;
+    details: string[];
   } {
     const beforeText = this.extractTextContent(beforeContent);
     const afterText = this.extractTextContent(afterContent);
@@ -539,12 +536,21 @@ export class ComparisonEngine {
     const added: string[] = [];
     const removed: string[] = [];
     const modified: string[] = [];
+    const details: string[] = [];
 
     diffResult.forEach((part: any) => {
       if (part.added) {
-        added.push(part.value.trim());
+        const text = part.value.trim();
+        if (text.length > 0) {
+          added.push(text);
+          details.push(`➕ Added: "${text}"`);
+        }
       } else if (part.removed) {
-        removed.push(part.value.trim());
+        const text = part.value.trim();
+        if (text.length > 0) {
+          removed.push(text);
+          details.push(`➖ Removed: "${text}"`);
+        }
       }
     });
 
@@ -558,17 +564,95 @@ export class ComparisonEngine {
       );
       
       if (similarRemoved) {
-        modified.push(`Changed: "${similarRemoved}" → "${addedItem}"`);
+        const changeDescription = this.describeTextChange(similarRemoved, addedItem);
+        modified.push(changeDescription);
+        details.push(`✏️ Modified: ${changeDescription}`);
         addedSet.delete(addedItem);
         removedSet.delete(similarRemoved);
       }
     });
 
+    // Generate user-friendly summary
+    const summary = this.generateContentSummary(added, removed, modified);
+
     return {
       added: Array.from(addedSet).filter(item => item.length > 0),
       removed: Array.from(removedSet).filter(item => item.length > 0),
       modified: modified.filter(item => item.length > 0),
+      summary,
+      details: details.filter(item => item.length > 0),
     };
+  }
+
+  private describeTextChange(oldText: string, newText: string): string {
+    // Clean up text for better comparison
+    const cleanOld = oldText.replace(/\s+/g, ' ').trim();
+    const cleanNew = newText.replace(/\s+/g, ' ').trim();
+    
+    // If it's a simple word change
+    if (cleanOld.split(' ').length === 1 && cleanNew.split(' ').length === 1) {
+      return `"${cleanOld}" → "${cleanNew}"`;
+    }
+    
+    // If it's a phrase or sentence change
+    if (cleanOld.length < 50 && cleanNew.length < 50) {
+      return `"${cleanOld}" → "${cleanNew}"`;
+    }
+    
+    // For longer text, show the key differences
+    const oldWords = cleanOld.split(' ');
+    const newWords = cleanNew.split(' ');
+    
+    // Find the first different word
+    let firstDiffIndex = 0;
+    while (firstDiffIndex < Math.min(oldWords.length, newWords.length) && 
+           oldWords[firstDiffIndex] === newWords[firstDiffIndex]) {
+      firstDiffIndex++;
+    }
+    
+    if (firstDiffIndex < oldWords.length || firstDiffIndex < newWords.length) {
+      const oldDiff = oldWords.slice(firstDiffIndex, firstDiffIndex + 3).join(' ');
+      const newDiff = newWords.slice(firstDiffIndex, firstDiffIndex + 3).join(' ');
+      return `Changed text around "${oldDiff}" → "${newDiff}"`;
+    }
+    
+    return `"${cleanOld.substring(0, 30)}..." → "${cleanNew.substring(0, 30)}..."`;
+  }
+
+  private generateContentSummary(added: string[], removed: string[], modified: string[]): string {
+    const totalChanges = added.length + removed.length + modified.length;
+    
+    if (totalChanges === 0) {
+      return "No content changes detected";
+    }
+    
+    const parts: string[] = [];
+    
+    if (added.length > 0) {
+      if (added.length === 1) {
+        parts.push(`1 item added`);
+      } else {
+        parts.push(`${added.length} items added`);
+      }
+    }
+    
+    if (removed.length > 0) {
+      if (removed.length === 1) {
+        parts.push(`1 item removed`);
+      } else {
+        parts.push(`${removed.length} items removed`);
+      }
+    }
+    
+    if (modified.length > 0) {
+      if (modified.length === 1) {
+        parts.push(`1 item modified`);
+      } else {
+        parts.push(`${modified.length} items modified`);
+      }
+    }
+    
+    return parts.join(', ');
   }
 
   private extractTextContent(html: string): string {
